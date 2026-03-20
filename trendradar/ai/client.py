@@ -38,6 +38,7 @@ class AIClient:
         self.timeout = config.get("TIMEOUT", 120)
         self.num_retries = config.get("NUM_RETRIES", 2)
         self.fallback_models = config.get("FALLBACK_MODELS", [])
+        self.extra_params = config.get("EXTRA_PARAMS", {}) or {}
 
     def chat(
         self,
@@ -82,6 +83,20 @@ class AIClient:
         # 添加 fallback 模型（如果配置了）
         if self.fallback_models:
             params["fallbacks"] = self.fallback_models
+
+        # 部分自定义 OpenAI 兼容网关会拦截默认 Python User-Agent。
+        # 为避免 GitHub Actions / Python 客户端被误判，给自定义端点设置一个中性 UA。
+        if self.api_base and "extra_headers" not in self.extra_params:
+            params["extra_headers"] = {"User-Agent": "curl/8.7.1"}
+
+        # 合并配置里的额外参数（如 extra_headers、top_p、stop 等）
+        for key, value in self.extra_params.items():
+            if key == "extra_headers" and isinstance(value, dict):
+                merged_headers = dict(params.get("extra_headers", {}))
+                merged_headers.update(value)
+                params["extra_headers"] = merged_headers
+            elif key not in params:
+                params[key] = value
 
         # 合并其他额外参数
         for key, value in kwargs.items():
