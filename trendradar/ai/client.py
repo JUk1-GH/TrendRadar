@@ -62,6 +62,7 @@ class AIClient:
         params = {
             "model": self.model,
             "messages": messages,
+            "stream": False,
             "temperature": kwargs.get("temperature", self.temperature),
             "timeout": kwargs.get("timeout", self.timeout),
             "num_retries": kwargs.get("num_retries", self.num_retries),
